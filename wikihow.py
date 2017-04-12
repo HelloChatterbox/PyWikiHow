@@ -53,16 +53,20 @@ def get_steps(url):
     # get step pic
     pic_links = []
     pic_html = soup.findAll("a", {"class": "image lightbox"})
+
     for html in pic_html:
+        html = html.find("img")
         i = str(html).find("data-src=")
         pic = str(html)[i:].replace('data-src="', "")
         i = pic.find('"')
-        pic_links.append(pic[:i])
+        pic = pic[:i]
+        pic_links.append(pic)
 
-    return title, steps, ex_steps, pic_links
+    # link is returned in case of random link
+    return title, steps, ex_steps, pic_links, url
 
 
-def get_how_to(subject):
+def get_how_tos(subject):
     how_tos = {}
     links = search_wikihow(subject)
     if links == []:
@@ -71,7 +75,7 @@ def get_how_to(subject):
     for link in links:
         how_to = {}
         # get steps and pics
-        title, steps, descript, pics = get_steps(link)
+        title, steps, descript, pics, link = get_steps(link)
         how_to["title"] = title
         how_to["steps"] = steps
         how_to["detailed"] = descript
@@ -83,7 +87,7 @@ def get_how_to(subject):
 def random_how_to():
     link = "http://www.wikihow.com/Special:Randomizer"
     # get steps and pics
-    title, steps, descript, pics = get_steps(link)
+    title, steps, descript, pics, link = get_steps(link)
     how_to = {}
     how_to["title"] = title
     how_to["steps"] = steps
@@ -95,26 +99,35 @@ def random_how_to():
 
 #### example
 
-# get random how to
-how_to = random_how_to()
-print how_to["title"]
-print how_to["steps"]
+def main():
+    # get random how to
 
-# search how tos about
-subject = "boil an egg"
-how_tos = get_how_to(subject)
-for how in how_tos:
-    print "\nHow to " + how
-    i = 0
-    for step in how_tos[how]["steps"]:
-        print "\nstep " + str(i+1) + " : " + step
-        print how_tos[how]["detailed"][i]
-        # TODO check pic link, some steps dont have pics!
-        try:
-            print how_tos[how]["pics"][i]
-        except:
-            print "parse the damn pic links for missing step pics"
-        i += 1
-    print "\n\n"
-    break
+    #how_to = random_how_to()
+    #print how_to["title"]
+    #print how_to["steps"]
 
+    # search how tos about
+    subject = "boil an egg"
+    how_tos = get_how_tos(subject)
+
+    print "searched for " + subject + " and found following the how tos:"
+    for how in how_tos:
+        print "\nHow to " + how
+
+    # get detailed info of how to
+    for how in how_tos:
+        print "\nDetailed description of : " + how
+        i = 0
+        for step in how_tos[how]["steps"]:
+            print "\nstep " + str(i+1) + " : " + step
+            print how_tos[how]["detailed"][i]
+            # TODO check pic link, some steps dont have pics!, parsing is wrong
+            try:
+                print how_tos[how]["pics"][i]
+            except:
+                print "parse the damn pic links for missing step pics"
+            i += 1
+        print "\n\n"
+        break
+
+main()
