@@ -42,11 +42,27 @@ def get_steps(url):
     ex_steps = []
     step_html = soup.findAll("div", {"class": "step"})
     for html in step_html:
-        trash = str(html.find("script"))
-        trash = trash.replace("<script>", "").replace("</script>", "").replace(";", "")
         step = html.find("b")
         step = step.text
+
+        trash = str(html.find("script"))
+        trash = trash.replace("<script>", "").replace("</script>", "").replace(";", "")
         ex_step = html.text.replace(trash, "")
+
+        trash_i = ex_step.find("//<![CDATA[")
+        trash_e = ex_step.find(">")
+        trash = ex_step[trash_i:trash_e+1]
+        ex_step = ex_step.replace(trash, "")
+
+        trash_i = ex_step.find("http://")
+        trash_e = ex_step.find(".mp4")
+        trash = ex_step[trash_i:trash_e + 4]
+        ex_step = ex_step.replace(trash, "")
+
+        trash = "WH.performance.mark('step1_rendered');"
+        ex_step = ex_step.replace(trash, "")
+        ex_step = ex_step.replace("\n", "")
+
         steps.append(step)
         ex_steps.append(ex_step)
 
@@ -102,9 +118,9 @@ def random_how_to():
 def main():
     # get random how to
 
-    #how_to = random_how_to()
-    #print how_to["title"]
-    #print how_to["steps"]
+    how_to = random_how_to()
+    print how_to["title"]
+    print how_to["steps"]
 
     # search how tos about
     subject = "boil an egg"
