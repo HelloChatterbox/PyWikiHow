@@ -84,13 +84,15 @@ class WikiHow(object):
         return title, steps, ex_steps, pic_links, url
 
     @staticmethod
-    def how_to(subject):
+    def how_to(subject, num=3):
         how_tos = {}
         links = WikiHow.search(subject)
         if not links:
             print("No wikihow results")
             return {}
-        for link in links:
+        for idx, link in enumerate(links):
+            if idx > num:
+                break
             how_to = {}
             # get steps and pics
             title, steps, descript, pics, link = WikiHow.parse(link)
