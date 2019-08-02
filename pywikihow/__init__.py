@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import str
 import requests
 import bs4
 
@@ -16,7 +14,9 @@ class WikiHow(object):
         list = []
         links = soup.findAll('a', attrs={'class': "result_link"})
         for link in links:
-            url = "http:" + link.get('href')
+            url = link.get('href')
+            if not url.startswith("http"):
+                url = "http://" + url
             list.append(url)
         return list
 
@@ -38,7 +38,7 @@ class WikiHow(object):
         for html in title_html:
             url = html.find("a").get("href")
             if not url.startswith("http"):
-                url = "http:" + url
+                url = "http://" + url
         title = url.split("/")[-1].replace("-", " ")
 
         # get steps
