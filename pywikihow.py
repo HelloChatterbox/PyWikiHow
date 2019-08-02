@@ -36,7 +36,9 @@ class WikiHow(object):
         # get title
         title_html = soup.findAll("h1", {"class": "firstHeading"})
         for html in title_html:
-            url = "http:" + html.find("a").get("href")
+            url = html.find("a").get("href")
+            if not url.startswith("http"):
+                url = "http:" + url
         title = url.split("/")[-1].replace("-", " ")
 
         # get steps
