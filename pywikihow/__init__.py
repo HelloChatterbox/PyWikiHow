@@ -1,142 +1,205 @@
 import requests
 import bs4
+from pywikihow.exceptions import ParseError
 
 
-class WikiHow(object):
+def get_html(url):
+    headers = {'User-Agent': "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0"}
+    r = requests.get(url, headers=headers)
+    html = r.text.encode("utf8")
+    return html
 
-    @staticmethod
-    def search(search_term):
-        search_url = "http://www.wikihow.com/wikiHowTo?search="
-        search_term_query = search_term.replace(" ", "+")
-        search_url += search_term_query
-        html = WikiHow._get_html(search_url)
-        soup = bs4.BeautifulSoup(html, 'html.parser')
-        list = []
-        links = soup.findAll('a', attrs={'class': "result_link"})
-        for link in links:
-            url = link.get('href')
-            if not url.startswith("http"):
-                url = "http://" + url
-            list.append(url)
-        return list
 
-    @staticmethod
-    def _get_html(url):
-        headers = {'User-Agent': "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0"}
-        r = requests.get(url, headers=headers)
-        html = r.text.encode("utf8")
-        return html
+class HowToStep:
+    def __init__(self, number, summary=None, description=None, picture=None):
+        self._number = number
+        self._summary = summary
+        self._description = description
+        self._picture = picture
 
-    @staticmethod
-    def parse(url):
-        # open url
-        html = WikiHow._get_html(url)
-        soup = bs4.BeautifulSoup(html, 'html.parser')
+    @property
+    def number(self):
+        return self._number
 
+    @property
+    def summary(self):
+        return self._summary
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def picture(self):
+        return self._picture
+
+    def as_dict(self):
+        return {"number": self.number,
+                "summary": self.summary,
+                "description": self.description,
+                "picture": self.picture}
+
+    def print(self, extended=False):
+        print(self.number, "-", self.summary)
+        if extended:
+            print(self.description)
+
+
+class HowTo:
+    def __init__(self, url="http://www.wikihow.com/Special:Randomizer", lazy=True):
+        self._url = url
+        self._title = None
+        self._steps = []
+        self._parsed = False
+        if not lazy:
+            self._parse()
+
+    def __repr__(self):
+        return "HowTo:" + self.title
+
+    @property
+    def url(self):
+        if not self._parsed:
+            self._parse()
+        return self._url
+
+    @property
+    def title(self):
+        if not self._parsed:
+            self._parse()
+        return self._title
+
+    @property
+    def steps(self):
+        if not self._parsed:
+            self._parse()
+        return self._steps
+
+    @property
+    def summary(self):
+        summary = self.title + "\n"
+        for step in self.steps:
+            summary += "{n} - ".format(n=step.number) + step.summary + "\n"
+        return summary
+
+    @property
+    def n_steps(self):
+        return len(self._steps)
+
+    def print(self, extended=False):
+        if not extended:
+            print(self.summary)
+        else:
+            print(self.title)
+            for s in self.steps:
+                s.print(extended)
+
+    def _parse_title(self, soup):
         # get title
-        title_html = soup.findAll("h1", {"class": "firstHeading"})
-        for html in title_html:
-            url = html.find("a").get("href")
-            if not url.startswith("http"):
-                url = "http://" + url
-        title = url.split("/")[-1].replace("-", " ")
+        html = soup.findAll("h1", {"class": "firstHeading"})[0]
+        a = html.find("a")
+        if not a:
+            raise ParseError
+        else:
+            self._url = html.find("a").get("href")
+            if not self._url.startswith("http"):
+                self._url = "http://" + self._url
+            self._title = self._url.split("/")[-1].replace("-", " ")
 
-        # get steps
-        steps = []
-        ex_steps = []
+    def _parse_steps(self, soup):
+        self._steps = []
         step_html = soup.findAll("div", {"class": "step"})
+        count = 0
         for html in step_html:
-            step = html.find("b")
-            step = step.text
+            count += 1
+            step = HowToStep(count, html.find("b").text)
 
-            trash = str(html.find("script"))
-            trash = trash.replace("<script>", "").replace("</script>", "").replace(";", "")
-            ex_step = html.text.replace(trash, "")
-
-            trash_i = ex_step.find("//<![CDATA[")
-            trash_e = ex_step.find(">")
-            trash = ex_step[trash_i:trash_e+1]
-            ex_step = ex_step.replace(trash, "")
-
-            trash_i = ex_step.find("http://")
-            trash_e = ex_step.find(".mp4")
-            trash = ex_step[trash_i:trash_e + 4]
-            ex_step = ex_step.replace(trash, "")
-
-            trash = "WH.performance.mark('step1_rendered');"
-            ex_step = ex_step.replace(trash, "")
+            # this is damn ugly but it works for now
+            # please forgive me for this awful blob
+            _ = str(html.find("script"))
+            _ = _.replace("<script>", "").replace("</script>", "").replace(";", "")
+            ex_step = html.text.replace(_, "")
+            _2 = ex_step.find("//<![CDATA[")
+            _3 = ex_step.find(">")
+            _ = ex_step[_2:_3 + 1]
+            ex_step = ex_step.replace(_, "")
+            _2 = ex_step.find("http://")
+            _3 = ex_step.find(".mp4")
+            _ = ex_step[_2:_3 + 4]
+            ex_step = ex_step.replace(_, "")
+            _ = "WH.performance.mark('step1_rendered');"
+            ex_step = ex_step.replace(_, "")
             ex_step = ex_step.replace("\n", "")
 
-            steps.append(step)
-            ex_steps.append(ex_step)
+            # extended step is now clean
+            step._description = ex_step
+            self._steps.append(step)
 
+    def _parse_pictures(self, soup):
         # get step pic
-        pic_links = []
-        pic_html = soup.findAll("a", {"class": "image lightbox"})
-
-        for html in pic_html:
+        count = 0
+        for html in soup.findAll("a", {"class": "image lightbox"}):
+            # one more ugly blob, nice :D
             html = html.find("img")
             i = str(html).find("data-src=")
             pic = str(html)[i:].replace('data-src="', "")
-            i = pic.find('"')
-            pic = pic[:i]
-            pic_links.append(pic)
+            pic = pic[:pic.find('"')]
 
-        # link is returned in case of random link
-        return title, steps, ex_steps, pic_links, url
+            # save in step
+            self._steps[count]._picture = pic
+            count += 1
 
-    @staticmethod
-    def how_to(subject, num=3):
-        how_tos = {}
-        links = WikiHow.search(subject)
-        if not links:
-            print("No wikihow results")
-            return {}
-        for idx, link in enumerate(links):
-            if idx > num:
-                break
-            how_to = {}
-            # get steps and pics
-            title, steps, descript, pics, link = WikiHow.parse(link)
-            how_to["title"] = title
-            how_to["url"] = link
+    def _parse(self):
+        try:
+            html = get_html(self._url)
+            soup = bs4.BeautifulSoup(html, 'html.parser')
+            self._parse_title(soup)
+            self._parse_steps(soup)
+            self._parse_pictures(soup)
+            self._parsed = True
+        except Exception as e:
+            raise ParseError
 
-            items = []
-            for i in range(len(steps)):
-                item = {"step": steps[i],
-                        "detailed": descript[i],
-                        "pic": None}
-                # there are only pics sometimes, but in general they seem to have the step number in the name
-                for p in pics:
-                    if "step-" + str(i+1) in p.split("/")[-1].lower():
-                        item["pic"] = p
-                        break
-                items.append(item)
+    def as_dict(self):
+        return {
+            "title": self.title,
+            "url": self._url,
+            "n_steps": len(self.steps),
+            "steps": [s.as_dict() for s in self.steps]
+        }
 
-            how_to["steps"] = items
 
-            how_tos[title] = how_to
+def RandomHowTo():
+    return HowTo()
 
-        return how_tos
+
+class WikiHow:
+    search_url = "http://www.wikihow.com/wikiHowTo?search="
 
     @staticmethod
-    def random():
-        link = "http://www.wikihow.com/Special:Randomizer"
-        title, steps, descript, pics, link = WikiHow.parse(link)
-        how_to = {}
-        how_to["title"] = title
-        how_to["url"] = link
-        items = []
-        for i in range(len(steps)):
-            item = {"step": steps[i],
-                    "detailed": descript[i],
-                    "pic": None}
-            # there are only pics sometimes, but in general they seem to have the step-number in the name
-            for p in pics:
-                if "step-" + str(i + 1) in p.split("/")[-1].lower():
-                    item["pic"] = p
-                    break
-            items.append(item)
+    def search(search_term, max_results=-1):
+        html = get_html(WikiHow.search_url + search_term.replace(" ", "+"))
+        soup = bs4.BeautifulSoup(html, 'html.parser').findAll('a', attrs={'class': "result_link"})
+        count = 1
+        for link in soup:
+            url = link.get('href')
+            if not url.startswith("http"):
+                url = "http://" + url
+            how_to = HowTo(url)
+            try:
+                how_to._parse()
+            except ParseError:
+                continue
+            yield how_to
+            count += 1
+            if 0 < max_results < count:
+                return
 
-        how_to["steps"] = items
-        return how_to
+
+def search_wikihow(query, max_results=10):
+    return list(WikiHow.search(query, max_results))
+
+
+if __name__ == "__main__":
+    for how_to in WikiHow.search("buy bitcoin"):
+        how_to.print()
