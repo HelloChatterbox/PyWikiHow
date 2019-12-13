@@ -1,15 +1,3 @@
-# PyWikiHow
-
-unofficial wikihow python api
-
-## Install
-```bash
-pip install pywikihow
-```
-
-## Usage
-
-```python
 from pywikihow import WikiHow
 
 # get a random how to
@@ -34,5 +22,3 @@ for how_to in results:
         text = step["step"]
         extended_description = step["detailed"]
         picture = step["pic"]
-
-```

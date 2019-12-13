@@ -2,9 +2,9 @@ from setuptools import setup
 
 setup(
     name='pywikihow',
-    version='0.3',
+    version='0.3.1',
     packages=['pywikihow'],
-    url='https://github.com/JarbasAl/PyWikiHow',
+    url='https://github.com/OpenJarbas/PyWikiHow',
     install_requires=["requests", "bs4"],
     license='MIT',
     author='jarbasai',
