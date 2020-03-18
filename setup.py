@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pywikihow',
-    version='0.5.0',
+    version='0.5.1',
     packages=['pywikihow'],
     url='https://github.com/OpenJarbas/PyWikiHow',
     install_requires=["requests", "bs4"],
