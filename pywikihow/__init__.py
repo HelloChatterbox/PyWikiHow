@@ -96,7 +96,7 @@ class HowTo:
 
     def _parse_title(self, soup):
         # get title
-        html = soup.findAll("h1", {"class": "title_lg"})[0]
+        html = soup.findAll("h1", {"class": ["title_lg", "title_md", "title_sm"]})[0]
         a = html.find("a")
         if not a:
             raise ParseError
