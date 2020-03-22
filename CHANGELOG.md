@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2]  - 2019-03-22
+
+### Fixed
+
+At some point WikiHow has changed the class name they used for article titles. As a result, scraping and parsing failed.
+
+Thanks to [killhamster](https://github.com/killhamster) for submitting a fix
+
 ## [0.5.0]  - 2019-12-12
 
 Breaking Changes, api is backward incompatible
