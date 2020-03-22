@@ -47,5 +47,6 @@ Breaking Changes, api is backward incompatible
 - Made a changelog
 
 [unreleased]: https://github.com/OpenJarbas/PyWikiHow/tree/dev
+[0.5.2]: https://github.com/OpenJarbas/PyWikiHow/tree/0.5.2
 [0.5.0]: https://github.com/OpenJarbas/PyWikiHow/tree/0.5.0
 [0.3.1]: https://github.com/OpenJarbas/PyWikiHow/tree/0.3.1
