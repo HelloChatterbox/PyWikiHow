@@ -1,16 +1,15 @@
 # PyWikiHow
 
-unofficial wikihow python api
+An unofficial WikiWow python API. Uses BeautifulSoup to scrape WikiHow and return the data you want.
 
-- [PyWikiHow](#pywikihow)
-  * [Install](#install)
-  * [Usage](#usage)
-    + [Random How To](#random-how-to)
-    + [Searching](#searching)
-    + [Parsing](#parsing)
+- [Installation](#install)
+- [Usage](#usage)
+  * [Random How To](#random-how-to)
+  * [Searching](#searching)
+  * [Parsing](#parsing)
 
 
-## Install
+## Installation
 ```bash
 pip install pywikihow
 ```
@@ -19,7 +18,7 @@ pip install pywikihow
 
 ### Random How To
 
-Learn random stuff!
+Learn random stuff! Retuns a random WikiHow article. Sometimes they're weird.
 
 ```python
 from pywikihow import RandomHowTo
@@ -60,6 +59,7 @@ data = how_to.as_dict()
 
 print(how_to.url)
 print(how_to.title)
+print(how_to.intro)
 print(how_to.n_steps)
 print(how_to.summary)
 
@@ -70,4 +70,3 @@ data = first_step.as_dict()
 how_to.print(extended=True)
 
 ```
-
