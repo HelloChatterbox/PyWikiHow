@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3]  - 2020-03-23
+
+### Added
+
+- HowTo().intro 
+    - Thanks to [killhamster](https://github.com/killhamster) for this feature
+    
+### Changed
+
+- text is now stripped of extra blank spaces
+
+### Fixed
+
+- Some step summaries include extra divs (pictures for example) which 
+poluted the text, these are now removed
+
 ## [0.5.2]  - 2020-03-22
 
 ### Fixed
