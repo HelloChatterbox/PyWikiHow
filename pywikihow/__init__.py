@@ -49,6 +49,7 @@ class HowTo:
     def __init__(self, url="http://www.wikihow.com/Special:Randomizer", lazy=True):
         self._url = url
         self._title = None
+        self._intro = None
         self._steps = []
         self._parsed = False
         if not lazy:
@@ -68,6 +69,12 @@ class HowTo:
         if not self._parsed:
             self._parse()
         return self._title
+
+    @property
+    def intro(self):
+        if not self._parsed:
+            self._parse()
+        return self._intro
 
     @property
     def steps(self):
@@ -91,6 +98,7 @@ class HowTo:
             print(self.summary)
         else:
             print(self.title)
+            print(self.intro)
             for s in self.steps:
                 s.print(extended)
 
@@ -105,6 +113,24 @@ class HowTo:
             if not self._url.startswith("http"):
                 self._url = "http://" + self._url
             self._title = self._url.split("/")[-1].replace("-", " ")
+
+    def _parse_intro(self, soup):
+        # get article intro/summary
+        intro_html = soup.find("div", {"class": "mf-section-0"})
+        if not intro_html:
+            raise ParseError
+        else:
+            super = intro_html.find("sup")
+            if super != None:
+                for sup in intro_html.findAll("sup"):
+                    sup.decompose()
+                    intro = intro_html.text
+                    self._intro = intro
+            else:
+                intro = intro_html.text
+                self._intro = intro
+
+
 
     def _parse_steps(self, soup):
         self._steps = []
@@ -154,6 +180,7 @@ class HowTo:
             html = get_html(self._url)
             soup = bs4.BeautifulSoup(html, 'html.parser')
             self._parse_title(soup)
+            self._parse_intro(soup)
             self._parse_steps(soup)
             self._parse_pictures(soup)
             self._parsed = True
@@ -164,6 +191,7 @@ class HowTo:
         return {
             "title": self.title,
             "url": self._url,
+            "intro": self._intro,
             "n_steps": len(self.steps),
             "steps": [s.as_dict() for s in self.steps]
         }
