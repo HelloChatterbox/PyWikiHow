@@ -6,6 +6,7 @@ data = how_to.as_dict()
 
 print(how_to.url)
 print(how_to.title)
+print(how_to.intro)
 print(how_to.n_steps)
 print(how_to.summary)
 

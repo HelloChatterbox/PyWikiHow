@@ -1,5 +1,6 @@
 import requests
 import bs4
+from bs4 import CData
 from pywikihow.exceptions import ParseError
 
 
@@ -49,6 +50,7 @@ class HowTo:
     def __init__(self, url="http://www.wikihow.com/Special:Randomizer", lazy=True):
         self._url = url
         self._title = None
+        self._intro = None
         self._steps = []
         self._parsed = False
         if not lazy:
@@ -68,6 +70,12 @@ class HowTo:
         if not self._parsed:
             self._parse()
         return self._title
+
+    @property
+    def intro(self):
+        if not self._parsed:
+            self._parse()
+        return self._intro
 
     @property
     def steps(self):
@@ -91,6 +99,7 @@ class HowTo:
             print(self.summary)
         else:
             print(self.title)
+            print(self.intro)
             for s in self.steps:
                 s.print(extended)
 
@@ -106,34 +115,73 @@ class HowTo:
                 self._url = "http://" + self._url
             self._title = self._url.split("/")[-1].replace("-", " ")
 
+    def _parse_intro(self, soup):
+        # get article intro/summary
+        intro_html = soup.find("div", {"class": "mf-section-0"})
+        if not intro_html:
+            raise ParseError
+        else:
+            super = intro_html.find("sup")
+            if super != None:
+                for sup in intro_html.findAll("sup"):
+                    sup.decompose()
+                    intro = intro_html.text
+                    self._intro = intro
+            else:
+                intro = intro_html.text
+                self._intro = intro
+
+
     def _parse_steps(self, soup):
         self._steps = []
         step_html = soup.findAll("div", {"class": "step"})
         count = 0
         for html in step_html:
+            # This finds and cleans weird tags from the step data
+            super = html.find("sup")
+            script = html.find("script")
+            if script != None:
+                for script in html.findAll("script"):
+                    script.decompose()
+            if super != None:
+                for sup in html.findAll("sup"):
+                    sup.decompose()
             count += 1
             step = HowToStep(count, html.find("b").text)
-
-            # this is damn ugly but it works for now
-            # please forgive me for this awful blob
-            _ = str(html.find("script"))
-            _ = _.replace("<script>", "").replace("</script>", "").replace(";", "")
-            ex_step = html.text.replace(_, "")
-            _2 = ex_step.find("//<![CDATA[")
-            _3 = ex_step.find(">")
-            _ = ex_step[_2:_3 + 1]
-            ex_step = ex_step.replace(_, "")
-            _2 = ex_step.find("http://")
-            _3 = ex_step.find(".mp4")
-            _ = ex_step[_2:_3 + 4]
-            ex_step = ex_step.replace(_, "")
-            _ = "WH.performance.mark('step1_rendered');"
-            ex_step = ex_step.replace(_, "")
-            ex_step = ex_step.replace("\n", "")
-
-            # extended step is now clean
-            step._description = ex_step
+            ex_step = html
+            for b in ex_step.findAll("b"):
+                b.decompose()
+            step._description = ex_step.text
             self._steps.append(step)
+
+    # def _parse_steps(self, soup):
+    #     self._steps = []
+    #     step_html = soup.findAll("div", {"class": "step"})
+    #     count = 0
+    #     for html in step_html:
+    #         count += 1
+    #         step = HowToStep(count, html.find("b").text)
+    #
+    #         # this is damn ugly but it works for now
+    #         # please forgive me for this awful blob
+    #         _ = str(html.find("script"))
+    #         _ = _.replace("<script>", "").replace("</script>", "").replace(";", "")
+    #         ex_step = html.text.replace(_, "")
+    #         _2 = ex_step.find("//<![CDATA[")
+    #         _3 = ex_step.find(">")
+    #         _ = ex_step[_2:_3 + 1]
+    #         ex_step = ex_step.replace(_, "")
+    #         _2 = ex_step.find("http://")
+    #         _3 = ex_step.find(".mp4")
+    #         _ = ex_step[_2:_3 + 4]
+    #         ex_step = ex_step.replace(_, "")
+    #         _ = "WH.performance.mark('step1_rendered');"
+    #         ex_step = ex_step.replace(_, "")
+    #         ex_step = ex_step.replace("\n", "")
+    #
+    #         # extended step is now clean
+    #         step._description = ex_step
+    #         self._steps.append(step)
 
     def _parse_pictures(self, soup):
         # get step pic
@@ -154,6 +202,7 @@ class HowTo:
             html = get_html(self._url)
             soup = bs4.BeautifulSoup(html, 'html.parser')
             self._parse_title(soup)
+            self._parse_intro(soup)
             self._parse_steps(soup)
             self._parse_pictures(soup)
             self._parsed = True
@@ -164,6 +213,7 @@ class HowTo:
         return {
             "title": self.title,
             "url": self._url,
+            "intro": self._intro,
             "n_steps": len(self.steps),
             "steps": [s.as_dict() for s in self.steps]
         }
