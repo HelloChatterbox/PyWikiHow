@@ -70,3 +70,9 @@ data = first_step.as_dict()
 how_to.print(extended=True)
 
 ```
+
+### ToDo
+
+- Many WikiHow articles also contain "Parts" which break down further into sub-steps. Write a function to parse these additional divisions.
+- Add parser for tips
+- Add parser for warnings
