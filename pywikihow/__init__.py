@@ -160,7 +160,7 @@ class HowTo:
     def _parse_pictures(self, soup):
         # get step pic
         count = 0
-        for html in soup.findAll("a", {"class": "image lightbox"}):
+        for html in soup.findAll("a", {"class": "image"}):
             # one more ugly blob, nice :D
             html = html.find("img")
             i = str(html).find("data-src=")
