@@ -1,11 +1,16 @@
-import requests
 import bs4
-from pywikihow.exceptions import ParseError
+from pywikihow.exceptions import ParseError, UnsupportedLanguage
+from datetime import timedelta
+from requests_cache import CachedSession
+
+expire_after = timedelta(hours=1)
+session = CachedSession(backend='memory', expire_after=expire_after)
 
 
 def get_html(url):
-    headers = {'User-Agent': "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0"}
-    r = requests.get(url, headers=headers)
+    headers = {
+        'User-Agent': "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0"}
+    r = session.get(url, headers=headers)
     html = r.text.encode("utf8")
     return html
 
@@ -46,7 +51,8 @@ class HowToStep:
 
 
 class HowTo:
-    def __init__(self, url="http://www.wikihow.com/Special:Randomizer", lazy=True):
+    def __init__(self, url="http://www.wikihow.com/Special:Randomizer",
+                 lazy=True):
         self._url = url
         self._title = None
         self._intro = None
@@ -193,17 +199,46 @@ class HowTo:
         }
 
 
-def RandomHowTo():
-    return HowTo()
+def RandomHowTo(lang="en"):
+    lang = lang.split("-")[0].lower()
+    if lang not in WikiHow.lang2url:
+        raise UnsupportedLanguage
+    url = WikiHow.lang2url[lang] + "Special:Randomizer"
+    return HowTo(url)
 
 
 class WikiHow:
-    search_url = "http://www.wikihow.com/wikiHowTo?search="
+    lang2url = {
+        "en": "http://www.wikihow.com/",
+        "es": "http://es.wikihow.com/",
+        "pt": "http://pt.wikihow.com/",
+        "it": "http://www.wikihow.it/",
+        "fr": "http://fr.wikihow.com/",
+        "ru": "http://ru.wikihow.com/",
+        "de": "http://de.wikihow.com/",
+        "zh": "http://zh.wikihow.com/",
+        "nl": "http://nl.wikihow.com/",
+        "cz": "http://www.wikihow.cz/",
+        "id": "http://id.wikihow.com/",
+        "jp": "http://www.wikihow.jp/",
+        "hi": "http://hi.wikihow.com/",
+        "th": "http://th.wikihow.com/",
+        "ar": "http://ar.wikihow.com/",
+        "ko": "http://ko.wikihow.com/",
+        "tr": "http://www.wikihow.com.tr/",
+        "vn": "http://www.wikihow.vn/",
+    }
 
     @staticmethod
-    def search(search_term, max_results=-1):
-        html = get_html(WikiHow.search_url + search_term.replace(" ", "+"))
-        soup = bs4.BeautifulSoup(html, 'html.parser').findAll('a', attrs={'class': "result_link"})
+    def search(search_term, max_results=-1, lang="en"):
+        lang = lang.split("-")[0].lower()
+        if lang not in WikiHow.lang2url:
+            raise UnsupportedLanguage
+        search_url = WikiHow.lang2url[lang] + \
+                     "wikiHowTo?search=" + search_term.replace(" ", "+")
+        html = get_html(search_url)
+        soup = bs4.BeautifulSoup(html, 'html.parser').findAll('a', attrs={
+            'class': "result_link"})
         count = 1
         for link in soup:
             url = link.get('href')
@@ -220,10 +255,18 @@ class WikiHow:
                 return
 
 
-def search_wikihow(query, max_results=10):
-    return list(WikiHow.search(query, max_results))
+def search_wikihow(query, max_results=10, lang="en"):
+    return list(WikiHow.search(query, max_results, lang))
 
 
 if __name__ == "__main__":
+    how = RandomHowTo("it")
+    how.print()
+
+    for how_to in WikiHow.search("comprar bitcoin", lang="pt"):
+        how_to.print()
+        break
+
     for how_to in WikiHow.search("buy bitcoin"):
         how_to.print()
+        break
